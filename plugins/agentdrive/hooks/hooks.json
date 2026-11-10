@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli hook claude-code",
+            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli@1.3.1 hook claude-code",
             "timeout": 10
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli hook claude-code",
+            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli@1.3.1 hook claude-code",
             "timeout": 10,
             "async": true
           }
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli hook claude-code",
+            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli@1.3.1 hook claude-code",
             "timeout": 10,
             "async": true
           }
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli hook claude-code",
+            "command": "command -v adrive >/dev/null 2>&1 && adrive hook claude-code || npx -y @adrive/cli@1.3.1 hook claude-code",
             "timeout": 10,
             "async": true
           }

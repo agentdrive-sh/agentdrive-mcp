@@ -1,6 +1,6 @@
 {
   "name": "agentdrive",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Captures every Claude Code session in the background and lets you resume it from Codex, OpenCode, Gemini CLI, Cursor, or Antigravity, and the other way around.",
   "author": {
     "name": "AgentDrive",
