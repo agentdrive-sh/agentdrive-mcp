@@ -1,91 +1,135 @@
-# @adrive/mcp-server
+# AgentDrive MCP Server
 
-MCP server for **AgentDrive** — the cross-agent artifact workspace with provenance and portable storage across Claude Code, Codex, Cursor, and LangGraph. Files, semantic recall, run logging, and cross-platform attribution.
+The official [Model Context Protocol](https://modelcontextprotocol.io) server for
+**[AgentDrive](https://agentdrive.sh)** — a cross-agent artifact workspace with
+provenance and portable storage across Claude Code, Codex, Cursor, LangGraph, and
+any MCP-aware host.
 
-Drop this server into any MCP-compatible client and your agents get a shared filesystem with provenance, semantic search across artifacts written by other agents, and per-run audit. Memory is a feature of the workspace, not the headline.
+Give your agents a shared, persistent workspace: files with versioning, semantic
+recall over everything prior agents produced, run logging, and cross-agent
+attribution — so the next session (on any tool) picks up where the last one left off.
 
-## Install
+- **Website:** https://agentdrive.sh
+- **Docs:** https://agentdrive.sh/docs
+- **npm:** [`@adrive/mcp-server`](https://www.npmjs.com/package/@adrive/mcp-server)
+- **Hosted endpoint:** `https://mcp.agentdrive.sh/mcp`
 
-```sh
-pnpm dlx @adrive/mcp-server
-# or
-npx @adrive/mcp-server
+## Claude Code plugin
+
+This repo is also the Claude Code plugin marketplace. The plugin captures every
+session in the background and resumes it from Codex, OpenCode, Gemini CLI, Antigravity, or Cursor:
+
+```
+/plugin install agentdrive --marketplace agentdrive-sh/agentdrive-mcp
 ```
 
-## Environment variables
+On Claude Code older than 2.1.275, run `/plugin marketplace add agentdrive-sh/agentdrive-mcp`
+then `/plugin install agentdrive@agentdrive`. Sign in with `/agentdrive:login`.
 
-| Variable | Required | Default | Notes |
-|---|---|---|---|
-| `AGENTDRIVE_API_KEY` | no | key saved by `adrive auth login` | Falls back to `~/.config/agentdrive/config.json`, so client configs never need the key inline. With no key at all the server still starts and offers one tool, `drive_connect`, which signs the user in through the browser and connects their other agent tools; the full toolset then appears in the same session. |
-| `AGENTDRIVE_API_URL` | no | `https://app.agentdrive.sh` | Override for self-host or staging. |
-| `AGENTDRIVE_AGENT_PLATFORM` | no | `unknown` | Identifies which host is calling. Valid: `claude-code | codex | opencode | gemini-cli | cursor | antigravity | langgraph | crewai | autogen | hermes | openclaw | unknown`. Unknown values downgrade to `unknown` server-side. |
-| `AGENTDRIVE_AGENT_ROLE` | no | (empty) | Free-form role label (`planner`, `reviewer`, etc.). Stamped on every request for provenance. |
+## Get an API key (free)
 
-The server derives the current project from its working directory (git remote, else repo path), which scopes `drive_sessions` and `drive_resume`.
+Create one at **https://app.agentdrive.sh** — no credit card. The free tier
+(1 workspace, 1 GB storage, 10k embeddings) is free indefinitely.
 
-## Client configuration
+## Two ways to connect
 
-`curl -fsSL https://app.agentdrive.sh/install | sh` runs `adrive init`, which wires every detected harness. For Claude Code, install the plugin instead: `/plugin marketplace add agentdrive-sh/agentdrive-mcp` then `/plugin install agentdrive@agentdrive`.
+### 1. Hosted (no install) — Streamable HTTP
 
-Manual entries, for reference:
+Point any MCP client that supports remote servers at the hosted endpoint and pass
+your key as a bearer token:
 
-### Codex CLI (`~/.codex/config.toml`)
-
-```toml
-[mcp_servers.agentdrive]
-command = "npx"
-args = ["-y", "@adrive/mcp-server"]
-
-[mcp_servers.agentdrive.env]
-AGENTDRIVE_AGENT_PLATFORM = "codex"
+```
+URL:    https://mcp.agentdrive.sh/mcp
+Header: Authorization: Bearer agentdrive_live_xxx
 ```
 
-### Cursor (`~/.cursor/mcp.json`)
+Or install in one click via **[Smithery](https://smithery.ai/servers/rakesh1002/agentdrive)**.
 
-```json
+### 2. Local (stdio) — via npx
+
+```jsonc
 {
   "mcpServers": {
     "agentdrive": {
       "command": "npx",
       "args": ["-y", "@adrive/mcp-server"],
-      "env": { "AGENTDRIVE_AGENT_PLATFORM": "cursor" }
+      "env": {
+        "AGENTDRIVE_API_KEY": "agentdrive_live_xxx"
+      }
     }
   }
 }
 ```
 
-## Tools (22)
+Add that block to your host's MCP config:
 
-**Files**
-- `drive_write` — create or update a file with versioning
-- `drive_read` — read a file's content
-- `drive_list` — list files (paginated automatically)
-- `drive_delete` — delete a file
+- **Claude Desktop:** `claude_desktop_config.json`
+- **Cursor:** `~/.cursor/mcp.json`
+- **Claude Code:** install the plugin (see above), which also captures sessions
+- **Codex / Cline / Continue / Zed:** the standard `mcpServers` block above
 
-**Collaboration**
-- `drive_share` — create a share link (optionally email-gated)
-- `drive_comment` — leave a comment on a file
-- `drive_feedback` — read comments on a file
+The fastest path is the AgentDrive installer, which auto-wires every detected host:
 
-**Provenance**
-- `drive_activity` — workspace event feed
-- `drive_versions` — file version history
+```sh
+curl -fsSL agentdrive.sh/install | sh
+```
 
-**Sessions**
-- `drive_sessions` — recent sessions in this project from every harness
-- `drive_resume` — load a prior session's handoff (defaults to the latest from another harness)
+## Configuration
 
-**Search and memory**
-- `drive_search` — semantic search across artifacts
-- `drive_recall` — recall facts and preferences (narrows to extracted facts in a future release)
-- `drive_context` — auto-pull relevant artifacts for the task you are about to do
-- `drive_log_run` — record an agent run for cross-platform audit
+| Env var | Required | Default | Description |
+|---|---|---|---|
+| `AGENTDRIVE_API_KEY` | no | key saved by `adrive auth login` | Your AgentDrive API key (`agentdrive_live_...`). Falls back to `~/.config/agentdrive/config.json`, so client configs never need the key inline. With no key at all the server still starts and offers one tool, `drive_connect`, which signs the user in through the browser and connects their other agent tools; the full toolset then appears in the same session. |
+| `AGENTDRIVE_API_URL` | no | `https://app.agentdrive.sh` | Override the API endpoint (self-hosted worker). |
+| `AGENTDRIVE_AGENT_PLATFORM` | no | `unknown` | Which agent runtime is calling — drives cross-agent provenance. One of `claude-code`, `codex`, `opencode`, `gemini-cli`, `cursor`, `antigravity`, `langgraph`, `crewai`, `autogen`, `hermes`, `openclaw`, `unknown`. |
+| `AGENTDRIVE_AGENT_ROLE` | no | — | Free-text role label (e.g. `planner`, `reviewer`) to distinguish multiple agents on the same platform. |
 
-**Org**
-- `drive_invite` — invite a human teammate
-- `drive_roles` — assign / list / remove per-workspace roles
-- `drive_org` — view org details, agents, members, usage
+## Tools
+
+22 tools across files, memory, sessions, collaboration, org, and provenance. The stdio server derives the current project from its working directory (git remote, else repo path), which scopes `drive_sessions` and `drive_resume`.
+
+| Tool | Category | Description |
+|---|---|---|
+| `drive_context` | memory | Auto-pull the most relevant prior artifacts for the task you're starting. |
+| `drive_search` | memory | Semantic search across your org's artifacts. |
+| `drive_recall` | memory | Recall persistent facts/preferences agents have written. |
+| `drive_sessions` | sessions | List recent agent sessions for this project across Claude Code, Codex, OpenCode, Gemini CLI, Antigravity, and Cursor. |
+| `drive_resume` | sessions | Load a compact handoff (goal, files touched, recent turns) from a prior session, by default the latest from a different harness. |
+| `drive_write` | files | Write a markdown file (auto-versioned). |
+| `drive_read` | files | Read a file's content. |
+| `drive_list` | files | List files in a workspace. |
+| `drive_delete` | files | Delete a file. |
+| `drive_versions` | files | View a file's version history. |
+| `drive_share` | collaboration | Generate a (optionally email-gated) share link. |
+| `drive_comment` | collaboration | Comment on a file. |
+| `drive_feedback` | collaboration | Read human comments on a file. |
+| `drive_activity` | provenance | Recent workspace activity (writes, comments, shares). |
+| `drive_log_run` | provenance | Log an agent run (task, status, artifacts, identity). |
+| `drive_invite` | org | Invite a human to your org by email. |
+| `drive_roles` | org | Assign/list/remove per-workspace access by email. |
+| `drive_org` | org | View org details: agents, members, plan, usage. |
+| `drive_sandbox_clone` | sandbox (experimental) | Clone a git repo into a per-workspace Linux sandbox. |
+| `drive_sandbox_exec` | sandbox (experimental) | Run a shell command in the sandbox. |
+| `drive_sandbox_read` | sandbox (experimental) | Read a file from the sandbox filesystem. |
+| `drive_sandbox_commit` | sandbox (experimental) | Stage + commit the sandbox worktree. |
+
+The `drive_sandbox_*` tools require the Cloudflare Containers plan on the AgentDrive
+worker and degrade cleanly to a "not configured" message otherwise.
+
+## Why AgentDrive
+
+Agents lose context at every session boundary and every tool switch. AgentDrive is
+the shared substrate: one workspace, every agent, full provenance. Write once with
+Claude Code; recall it from Cursor; hand off to Codex — each call is attributed to
+the right principal and platform.
+
+## Develop
+
+```sh
+npm install
+npm run build      # tsc -> dist/
+npm test           # vitest
+```
 
 ## License
 
-Apache-2.0. See [LICENSE](https://github.com/agentdrive-sh/agentdrive-mcp/blob/main/LICENSE).
+Apache-2.0. See [LICENSE](./LICENSE).
