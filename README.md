@@ -1,13 +1,14 @@
 # AgentDrive MCP Server
 
 The official [Model Context Protocol](https://modelcontextprotocol.io) server for
-**[AgentDrive](https://agentdrive.sh)** — a cross-agent artifact workspace with
-provenance and portable storage across Claude Code, Codex, Cursor, LangGraph, and
-any MCP-aware host.
+**[AgentDrive](https://agentdrive.sh)**: shared workspace for coding agents.
+Capture sessions from Claude Code, Codex, OpenCode, Cursor, Gemini CLI and
+Antigravity, resume them in any of the others, and search everything they wrote.
+Provenance on every artifact; portable storage on R2, S3 or your own bucket.
 
-Give your agents a shared, persistent workspace: files with versioning, semantic
-recall over everything prior agents produced, run logging, and cross-agent
-attribution — so the next session (on any tool) picks up where the last one left off.
+Hit a usage limit in one agent? Call `drive_resume` in another and it loads the
+handoff: the goal, the files touched and the latest turns. 22 MCP tools (18
+stable + 4 experimental sandbox), over stdio or hosted. Free plan, no credit card.
 
 - **Website:** https://agentdrive.sh
 - **Docs:** https://agentdrive.sh/docs
