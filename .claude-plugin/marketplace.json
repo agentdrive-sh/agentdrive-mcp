@@ -1,8 +1,8 @@
 {
   "name": "agentdrive",
   "owner": {
-    "name": "Rakesh Roushan",
-    "url": "https://github.com/Rakesh1002"
+    "name": "AgentDrive",
+    "url": "https://github.com/agentdrive-sh"
   },
   "metadata": {
     "description": "AgentDrive: cross-agent session capture and resume."

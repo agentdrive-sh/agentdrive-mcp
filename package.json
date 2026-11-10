@@ -1,7 +1,8 @@
 {
   "name": "@adrive/mcp-server",
-  "version": "1.1.5",
-  "description": "MCP server for AgentDrive — cross-agent artifact workspace with provenance and portable storage across Claude Code, Codex, Cursor, and LangGraph.",
+  "mcpName": "sh.agentdrive/agentdrive",
+  "version": "1.2.2",
+  "description": "MCP server for AgentDrive: capture coding-agent sessions and resume them in any other agent, in any direction.",
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
@@ -21,10 +22,10 @@
   "homepage": "https://agentdrive.sh",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Rakesh1002/agentdrive-mcp.git"
+    "url": "git+https://github.com/agentdrive-sh/agentdrive-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/Rakesh1002/agentdrive-mcp/issues"
+    "url": "https://github.com/agentdrive-sh/agentdrive-mcp/issues"
   },
   "keywords": [
     "agentdrive",

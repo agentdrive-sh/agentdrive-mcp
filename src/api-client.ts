@@ -106,6 +106,35 @@ export interface ListRunsQuery {
   cursor?: string;
 }
 
+export interface UsageWarning {
+  level: string;
+  message: string;
+  upgrade_url: string;
+}
+
+interface Envelope<T> {
+  success: boolean;
+  data?: T;
+  cursor?: string | null;
+  error?: string;
+  code?: string;
+  upgrade_url?: string;
+  usage_warning?: UsageWarning;
+}
+
+// The plan is full: the message is written for the human and already says how to upgrade.
+export class PlanLimitError extends Error {
+  constructor(message: string, readonly upgradeUrl: string) {
+    super(message.includes(upgradeUrl) ? message : `${message} Upgrade: ${upgradeUrl}`);
+    this.name = 'PlanLimitError';
+  }
+}
+
+function apiError(json: Envelope<unknown>, status: number): Error {
+  if (json.code === 'plan_limit' && json.upgrade_url) return new PlanLimitError(json.error ?? 'Plan limit reached.', json.upgrade_url);
+  return new Error(json.error || `API request failed: ${status}`);
+}
+
 export class ApiClient {
   readonly project?: string;
   readonly agentPlatform: string;
@@ -113,6 +142,8 @@ export class ApiClient {
   private apiKey: string;
   private agentRole: string;
   private fetchImpl: (input: string, init?: RequestInit) => Promise<Response>;
+  private shownLevels = new Set<string>();
+  private pendingWarning?: UsageWarning;
 
   constructor(config: ApiClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, '');
@@ -140,28 +171,33 @@ export class ApiClient {
     });
   }
 
-  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  private async send<T>(method: string, path: string, body?: unknown): Promise<Envelope<T>> {
     const res = await this.rawFetch(path, {
       method,
       body: body ? JSON.stringify(body) : undefined,
     });
-    const json = await res.json() as { success: boolean; data?: T; error?: string };
-    if (!res.ok || !json.success) {
-      throw new Error(json.error || `API request failed: ${res.status}`);
-    }
-    return json.data as T;
+    const json = await res.json() as Envelope<T>;
+    if (!res.ok || !json.success) throw apiError(json, res.status);
+    const warning = json.usage_warning;
+    if (warning && !this.shownLevels.has(warning.level)) this.pendingWarning = warning;
+    return json;
+  }
+
+  private async request<T>(method: string, path: string, body?: unknown): Promise<T> {
+    return (await this.send<T>(method, path, body)).data as T;
   }
 
   private async requestPage<T>(method: string, path: string, body?: unknown): Promise<PagedResponse<T>> {
-    const res = await this.rawFetch(path, {
-      method,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-    const json = await res.json() as { success: boolean; data?: T[]; cursor?: string | null; error?: string };
-    if (!res.ok || !json.success) {
-      throw new Error(json.error || `API request failed: ${res.status}`);
-    }
-    return { items: (json.data ?? []) as T[], cursor: json.cursor ?? null };
+    const json = await this.send<T[]>(method, path, body);
+    return { items: json.data ?? [], cursor: json.cursor ?? null };
+  }
+
+  // A usage warning not yet shown in this process, at most once per level.
+  takeUsageWarning(): UsageWarning | undefined {
+    const warning = this.pendingWarning;
+    this.pendingWarning = undefined;
+    if (warning) this.shownLevels.add(warning.level);
+    return warning;
   }
 
   async createWorkspace(name: string) {
@@ -294,7 +330,7 @@ export class ApiClient {
 
   async inviteMember(email: string, role: 'owner' | 'admin' | 'member' = 'member') {
     return this.request<{
-      org_id: string; email: string; role: string;
+      org_id: string; email: string; role: string; expires_at: string;
     }>('POST', '/org/invite', { email, role });
   }
 
@@ -354,7 +390,7 @@ export class ApiClient {
       error?: string;
     };
     if (!res.ok || !json.success || !json.data) {
-      throw new Error(json.error || `API request failed: ${res.status}`);
+      throw apiError(json, res.status);
     }
     const { agents, members, usage, quota, ...org } = json.data;
     return {
@@ -381,8 +417,9 @@ export class ApiClient {
     return this.request<{ hits: SearchHit[]; total: number }>('POST', '/search', body);
   }
 
-  async context(body: ContextRequestBody): Promise<{ artifacts: ContextArtifact[]; retrieved_at: number }> {
-    return this.request<{ artifacts: ContextArtifact[]; retrieved_at: number }>('POST', '/context', body);
+  async context(body: ContextRequestBody): Promise<{ artifacts: ContextArtifact[]; retrieved_at: number; usage_warning?: UsageWarning }> {
+    const json = await this.send<{ artifacts: ContextArtifact[]; retrieved_at: number }>('POST', '/context', body);
+    return { ...json.data!, usage_warning: json.usage_warning };
   }
 
   async logRun(body: RunRequestBody): Promise<{ run_id: string; created_at: number }> {

@@ -18,7 +18,8 @@ to the `adrive` CLI when they are not available.
 - "What sessions do I have?", "what did Cursor do today?": call
   `drive_sessions` (filters: `project`, `platform`, `limit`).
 
-Both default to the current project.
+Both default to the current project. On the Free plan the list covers the
+last 14 days; an older session still resumes by its id.
 
 ## Context and search
 

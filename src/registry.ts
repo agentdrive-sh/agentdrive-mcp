@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import type { ApiClient } from './api-client.js';
+import { PlanLimitError, type ApiClient } from './api-client.js';
 
 import { driveWriteSchema, driveWrite } from './tools/drive-write.js';
 import { driveReadSchema, driveRead } from './tools/drive-read.js';
@@ -65,6 +65,21 @@ Reach for these tools without waiting to be asked:
 Privacy: if the user has Private Workspace on, written content is
 encrypted client-side; the AgentDrive server only stores ciphertext.`;
 
+// Plan-limit refusals become a plain result the agent relays to its human, and
+// a usage warning from the call rides along on the tool's output.
+function withUsage(handler: ToolDef['handler']): ToolDef['handler'] {
+  return async (client, args) => {
+    try {
+      const result = await handler(client, args);
+      const warning = client.takeUsageWarning();
+      return warning ? { ...result, content: [...result.content, { type: 'text', text: warning.message }] } : result;
+    } catch (err) {
+      if (!(err instanceof PlanLimitError)) throw err;
+      return { content: [{ type: 'text', text: `${err.message}\nTell the user this, including the upgrade link.` }], isError: true };
+    }
+  };
+}
+
 // Single source of truth for the 22 tools. Consumed by the stdio server
 // (packages/mcp-server/src/index.ts) and the hosted Streamable-HTTP endpoint
 // (apps/worker/src/routes/mcp.ts).
@@ -76,7 +91,7 @@ export const TOOLS: ToolDef[] = [
   { name: 'drive_comment', description: 'Add a comment to a file.', schema: driveCommentSchema, handler: driveComment },
   { name: 'drive_feedback', description: 'Read human comments on a file. Use this to check if humans have left feedback.', schema: driveFeedbackSchema, handler: driveFeedback },
   { name: 'drive_activity', description: 'Get recent activity in a workspace (file writes, comments, shares).', schema: driveActivitySchema, handler: driveActivity },
-  { name: 'drive_invite', description: 'Invite a human to your organization by email. They will receive a verification code to join.', schema: driveInviteSchema, handler: driveInvite },
+  { name: 'drive_invite', description: 'Invite a human to your organization by email. The invite stays pending until they sign in and accept it.', schema: driveInviteSchema, handler: driveInvite },
   { name: 'drive_roles', description: 'Manage per-workspace role delegation. Assign, list, or remove access for specific emails (view/comment/edit).', schema: driveRolesSchema, handler: driveRoles },
   { name: 'drive_org', description: 'View your organization details: agents, members, plan, and usage.', schema: driveOrgSchema, handler: driveOrg },
   { name: 'drive_delete', description: 'Delete a file from a workspace.', schema: driveDeleteSchema, handler: driveDelete },
@@ -91,7 +106,7 @@ export const TOOLS: ToolDef[] = [
   { name: 'drive_sandbox_exec', description: '[EXPERIMENTAL] Run a shell command inside the per-workspace Linux sandbox. Captures stdout/stderr (64 KB cap), exit code, duration. Requires Cloudflare Containers; degrades to 503 otherwise.', schema: driveSandboxExecSchema, handler: driveSandboxExec },
   { name: 'drive_sandbox_read', description: '[EXPERIMENTAL] Read a file from the per-workspace sandbox filesystem (build artifacts, test output, logs). Requires Cloudflare Containers; degrades to 503 otherwise.', schema: driveSandboxReadSchema, handler: driveSandboxRead },
   { name: 'drive_sandbox_commit', description: '[EXPERIMENTAL] Stage + commit the current sandbox worktree. Surfaces as an AgentDrive artifact at commits/<sha>.json. Requires Cloudflare Containers; degrades to 503 otherwise.', schema: driveSandboxCommitSchema, handler: driveSandboxCommit },
-];
+].map((tool) => ({ ...tool, handler: withUsage(tool.handler) }));
 
 export { ApiClient } from './api-client.js';
 export type { ApiClientConfig } from './api-client.js';

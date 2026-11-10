@@ -12,21 +12,22 @@ export async function driveContext(client: ApiClient, args: {
   workspace_id?: string;
   limit?: number;
 }) {
-  const { artifacts } = await client.context({
+  const { artifacts, usage_warning } = await client.context({
     task: args.task,
     workspace_id: args.workspace_id,
     limit: args.limit ?? 5,
   });
-
-  if (artifacts.length === 0) {
-    return { content: [{ type: 'text' as const, text: 'No prior context found.' }] };
-  }
+  // Shown here every time, so the write-tool notice must not repeat it.
+  client.takeUsageWarning();
 
   const now = Date.now();
+  const body = artifacts.length === 0
+    ? 'No prior context found.'
+    : artifacts.map((a) => formatArtifact(a, now)).join('\n\n---\n\n');
   return {
     content: [{
       type: 'text' as const,
-      text: artifacts.map((a) => formatArtifact(a, now)).join('\n\n---\n\n'),
+      text: usage_warning ? `${body}\n\n${usage_warning.message}` : body,
     }],
   };
 }

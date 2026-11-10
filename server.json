@@ -1,0 +1,49 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "sh.agentdrive/agentdrive",
+  "title": "AgentDrive",
+  "description": "Capture coding-agent sessions and resume them in any other agent: Claude Code, Codex, Cursor, more.",
+  "websiteUrl": "https://agentdrive.sh",
+  "repository": {
+    "url": "https://github.com/agentdrive-sh/agentdrive-mcp",
+    "source": "github"
+  },
+  "version": "1.2.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@adrive/mcp-server",
+      "version": "1.2.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "AGENTDRIVE_API_KEY",
+          "description": "AgentDrive API key. Optional after `npx @adrive/cli auth login`.",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "AGENTDRIVE_AGENT_PLATFORM",
+          "description": "Harness id recorded as provenance, e.g. claude-code or codex.",
+          "isRequired": false
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.agentdrive.sh/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer <AgentDrive API key>. Get one free at https://app.agentdrive.sh (no credit card).",
+          "isRequired": true,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}

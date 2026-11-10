@@ -10,12 +10,12 @@ export async function driveInvite(client: ApiClient, args: {
   email: string;
   role: 'owner' | 'admin' | 'member';
 }) {
-  const member = await client.inviteMember(args.email, args.role);
+  const invite = await client.inviteMember(args.email, args.role);
 
   return {
     content: [{
       type: 'text' as const,
-      text: `Invited ${args.email} as ${args.role}. They'll receive an email with a verification code to join the organization.`,
+      text: `Invited ${invite.email} as ${invite.role}. The invite is pending: they join only after they sign in to AgentDrive and accept it (expires ${invite.expires_at.split('T')[0]}).`,
     }],
   };
 }
