@@ -8,12 +8,12 @@
     "url": "https://github.com/agentdrive-sh/agentdrive-mcp",
     "source": "github"
   },
-  "version": "1.2.2",
+  "version": "1.2.3",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@adrive/mcp-server",
-      "version": "1.2.2",
+      "version": "1.2.3",
       "transport": {
         "type": "stdio"
       },

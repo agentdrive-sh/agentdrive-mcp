@@ -47,7 +47,11 @@ function buildClient(): ApiClient | undefined {
 
 function registerTools(server: McpServer, client: ApiClient): void {
   for (const tool of TOOLS) {
-    server.tool(tool.name, tool.description, tool.schema, (args) => tool.handler(client, args));
+    server.registerTool(
+      tool.name,
+      { title: tool.annotations.title, description: tool.description, inputSchema: tool.schema, annotations: tool.annotations },
+      (args) => tool.handler(client, args),
+    );
   }
 }
 
@@ -81,9 +85,12 @@ if (client) {
     probeConnected: buildClient,
     onConnected: switchOver,
   });
-  const connectTool = server.tool('drive_connect', CONNECT_DESCRIPTION, async () => ({
-    content: [{ type: 'text' as const, text: await connect() }],
-  }));
+  const connectAnnotations = { title: 'Connect AgentDrive', readOnlyHint: false, destructiveHint: false };
+  const connectTool = server.registerTool(
+    'drive_connect',
+    { title: connectAnnotations.title, description: CONNECT_DESCRIPTION, annotations: connectAnnotations },
+    async () => ({ content: [{ type: 'text' as const, text: await connect() }] }),
+  );
   let switched = false;
   function switchOver(connected: ApiClient): void {
     if (switched) return;
