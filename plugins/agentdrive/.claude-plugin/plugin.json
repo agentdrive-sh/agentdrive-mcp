@@ -1,5 +1,6 @@
 {
   "name": "agentdrive",
+  "displayName": "AgentDrive",
   "version": "0.1.2",
   "description": "Captures every Claude Code session in the background and lets you resume it from Codex, OpenCode, Gemini CLI, Cursor, or Antigravity, and the other way around.",
   "author": {
@@ -8,6 +9,10 @@
   },
   "homepage": "https://agentdrive.sh",
   "repository": "https://github.com/agentdrive-sh/agentdrive-mcp",
+  "documentationUrl": "https://agentdrive.sh/docs",
+  "supportUrl": "https://github.com/agentdrive-sh/agentdrive-mcp/issues",
+  "privacyPolicyUrl": "https://agentdrive.sh/legal/privacy",
+  "termsOfServiceUrl": "https://agentdrive.sh/legal/terms",
   "license": "Apache-2.0",
   "keywords": ["sessions", "handoff", "memory", "mcp", "codex", "cursor", "opencode", "gemini", "antigravity"],
   "mcpServers": "./.mcp.json"

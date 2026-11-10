@@ -2,6 +2,14 @@
 
 AgentDrive saves your Claude Code sessions so you can pick one up in another coding agent (Codex, Cursor, OpenCode, Gemini CLI or Antigravity), or bring a session from one of those back into Claude Code. Hit a usage limit in one agent and keep going in another, with the transcript, decisions and files carried over.
 
+## Install
+
+```
+/plugin install agentdrive --marketplace agentdrive-sh/agentdrive-mcp
+```
+
+On Claude Code older than 2.1.275, run `/plugin marketplace add agentdrive-sh/agentdrive-mcp`, then `/plugin install agentdrive@agentdrive`.
+
 ## Commands
 
 - `/agentdrive:login` signs you in. It runs the AgentDrive CLI (`npx -y @adrive/cli init --yes`), which opens your browser once.
