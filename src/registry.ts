@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { PlanLimitError, type ApiClient } from './api-client.js';
+import { PlanLimitError, RateLimitError, type ApiClient } from './api-client.js';
 
 import { driveWriteSchema, driveWrite } from './tools/drive-write.js';
 import { driveReadSchema, driveRead } from './tools/drive-read.js';
@@ -79,7 +79,7 @@ Reach for these tools without waiting to be asked:
 Privacy: if the user has Private Workspace on, written content is
 encrypted client-side; the AgentDrive server only stores ciphertext.`;
 
-// Plan-limit refusals become a plain result the agent relays to its human, and
+// Plan-limit and rate-limit refusals become a plain result the agent relays to its human, and
 // a usage warning from the call rides along on the tool's output.
 function withUsage(handler: ToolDef['handler']): ToolDef['handler'] {
   return async (client, args) => {
@@ -88,6 +88,7 @@ function withUsage(handler: ToolDef['handler']): ToolDef['handler'] {
       const warning = client.takeUsageWarning();
       return warning ? { ...result, content: [...result.content, { type: 'text', text: warning.message }] } : result;
     } catch (err) {
+      if (err instanceof RateLimitError) return { content: [{ type: 'text', text: err.message }], isError: true };
       if (!(err instanceof PlanLimitError)) throw err;
       return { content: [{ type: 'text', text: `${err.message}\nTell the user this, including the upgrade link.` }], isError: true };
     }

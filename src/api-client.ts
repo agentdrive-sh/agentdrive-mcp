@@ -107,6 +107,7 @@ export interface ListRunsQuery {
 }
 
 export interface UsageWarning {
+  metric?: string;
   level: string;
   message: string;
   upgrade_url: string;
@@ -130,6 +131,35 @@ export class PlanLimitError extends Error {
   }
 }
 
+export class RateLimitError extends Error {
+  constructor(seconds: number) {
+    super(`AgentDrive is rate limiting this key; try again in ${seconds} seconds.`);
+    this.name = 'RateLimitError';
+  }
+}
+
+function retryAfterSeconds(res: Response): number {
+  const seconds = Number(res.headers.get('Retry-After'));
+  return Number.isFinite(seconds) && seconds > 0 ? seconds : 10;
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) return reject(signal.reason);
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal!.reason);
+    };
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+}
+
+const warningKey = (w: UsageWarning) => `${w.metric ?? 'unknown'}:${w.level}`;
+
 function apiError(json: Envelope<unknown>, status: number): Error {
   if (json.code === 'plan_limit' && json.upgrade_url) return new PlanLimitError(json.error ?? 'Plan limit reached.', json.upgrade_url);
   return new Error(json.error || `API request failed: ${status}`);
@@ -142,7 +172,7 @@ export class ApiClient {
   private apiKey: string;
   private agentRole: string;
   private fetchImpl: (input: string, init?: RequestInit) => Promise<Response>;
-  private shownLevels = new Set<string>();
+  private shownWarnings = new Set<string>();
   private pendingWarning?: UsageWarning;
 
   constructor(config: ApiClientConfig) {
@@ -163,12 +193,17 @@ export class ApiClient {
     };
   }
 
+  // No MCP request carries a deadline, so a 429 always gets its one retry after Retry-After.
   async rawFetch(path: string, init: RequestInit): Promise<Response> {
     const url = `${this.baseUrl}/v1${path}`;
-    return this.fetchImpl(url, {
-      ...init,
-      headers: { ...this.headers(), ...(init.headers as Record<string, string> | undefined) },
-    });
+    const req = { ...init, headers: { ...this.headers(), ...(init.headers as Record<string, string> | undefined) } };
+    let res = await this.fetchImpl(url, req);
+    if (res.status === 429) {
+      await sleep(retryAfterSeconds(res) * 1000, init.signal ?? undefined);
+      res = await this.fetchImpl(url, req);
+    }
+    if (res.status === 429) throw new RateLimitError(retryAfterSeconds(res));
+    return res;
   }
 
   private async send<T>(method: string, path: string, body?: unknown): Promise<Envelope<T>> {
@@ -179,7 +214,7 @@ export class ApiClient {
     const json = await res.json() as Envelope<T>;
     if (!res.ok || !json.success) throw apiError(json, res.status);
     const warning = json.usage_warning;
-    if (warning && !this.shownLevels.has(warning.level)) this.pendingWarning = warning;
+    if (warning && !this.shownWarnings.has(warningKey(warning))) this.pendingWarning = warning;
     return json;
   }
 
@@ -192,11 +227,11 @@ export class ApiClient {
     return { items: json.data ?? [], cursor: json.cursor ?? null };
   }
 
-  // A usage warning not yet shown in this process, at most once per level.
+  // A usage warning not yet shown in this process, at most once per metric and level.
   takeUsageWarning(): UsageWarning | undefined {
     const warning = this.pendingWarning;
     this.pendingWarning = undefined;
-    if (warning) this.shownLevels.add(warning.level);
+    if (warning) this.shownWarnings.add(warningKey(warning));
     return warning;
   }
 

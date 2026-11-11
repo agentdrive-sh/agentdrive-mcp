@@ -1,18 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { ApiClient } from '../src/api-client.js';
 import { TOOLS } from '../src/registry.js';
 
 const URL_PRO = 'https://agentdrive.sh/billing/upgrade?plan=pro';
 const PAUSED = `AgentDrive is paused: your Free plan's storage is full (1 of 1 GB). New files and sessions won't sync until you upgrade: ${URL_PRO}. Everything you've stored stays readable.`;
 
-function clientReturning(...bodies: Array<{ status?: number; body: unknown }>): ApiClient {
+function clientReturning(...bodies: Array<{ status?: number; headers?: Record<string, string>; body: unknown }>): ApiClient {
   let i = 0;
   return new ApiClient({
     baseUrl: 'https://api.test',
     apiKey: 'k',
     fetchImpl: async () => {
       const r = bodies[Math.min(i++, bodies.length - 1)]!;
-      return new Response(JSON.stringify(r.body), { status: r.status ?? 200 });
+      return new Response(JSON.stringify(r.body), { status: r.status ?? 200, headers: r.headers });
     },
   });
 }
@@ -74,6 +74,20 @@ describe('usage warnings on write tools', () => {
     expect(outputs[3]).not.toContain('AgentDrive: your');
   });
 
+  it('shows the same level once per metric, so a storage warning does not hide a resume warning', async () => {
+    const resume = { metric: 'resume_count', level: 'warn80', message: `AgentDrive: your Free plan has used 8 of 10 cross-agent resumes. Upgrade to Pro: ${URL_PRO}`, upgrade_url: URL_PRO };
+    const client = clientReturning(
+      { body: { ...written, usage_warning: { ...warn('warn80', 85), metric: 'storage_bytes' } } },
+      { body: { ...written, usage_warning: resume } },
+      { body: { ...written, usage_warning: resume } },
+    );
+    const outputs = [];
+    for (let i = 0; i < 3; i++) outputs.push(text(await tool('drive_write').handler(client, writeArgs)));
+    expect(outputs[0]).toContain('used 85% of its storage');
+    expect(outputs[1]).toContain('cross-agent resumes');
+    expect(outputs[2]).not.toContain('AgentDrive: your');
+  });
+
   it('stays quiet without a warning', async () => {
     const client = clientReturning({ body: written });
     expect(text(await tool('drive_write').handler(client, writeArgs))).toBe('File written: a.md (v1, id: f_1)');
@@ -89,5 +103,35 @@ describe('drive_context', () => {
     expect(first).toContain('used 85% of its storage');
     expect(first.match(/AgentDrive: your/g)).toHaveLength(1);
     expect(text(await tool('drive_context').handler(client, { task: 'x' }))).toContain('used 85% of its storage');
+  });
+});
+
+describe('rate limiting', () => {
+  const limited = { status: 429, headers: { 'Retry-After': '10' }, body: { success: false, code: 'rate_limited', error: 'slow down' } };
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('waits out Retry-After and retries exactly once', async () => {
+    let calls = 0;
+    const client = clientReturning(limited, { body: written });
+    const pending = tool('drive_write').handler(client, writeArgs).finally(() => calls++);
+    await vi.advanceTimersByTimeAsync(9_999);
+    expect(calls).toBe(0);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(text(await pending)).toBe('File written: a.md (v1, id: f_1)');
+  });
+
+  it('tells the agent when to try again once the retry is limited too', async () => {
+    const client = clientReturning(limited, limited, { body: written });
+    const pending = tool('drive_write').handler(client, writeArgs);
+    await vi.advanceTimersByTimeAsync(10_000);
+    const result = await pending;
+    expect(result.isError).toBe(true);
+    expect(text(result)).toBe('AgentDrive is rate limiting this key; try again in 10 seconds.');
   });
 });
