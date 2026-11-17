@@ -18,8 +18,10 @@ to the `adrive` CLI when they are not available.
 - "What sessions do I have?", "what did Cursor do today?": call
   `drive_sessions` (filters: `project`, `platform`, `limit`).
 
-Both default to the current project and cover all session history on every
-plan. Free includes 10 cross-agent resumes a month.
+Both default to the current project. Without an AgentDrive account they run
+in local mode: they read the other agents' transcripts on this machine, with
+no limit and no network. Signed in, they cover all synced session history on
+every plan, and Free includes 10 cloud resumes a month.
 
 ## Context and search
 
@@ -46,8 +48,10 @@ adrive search "<query>"      # semantic search
 adrive push <file>           # save an artifact
 ```
 
-If `adrive` says the user is not logged in, ask them to run `adrive init`
-(or `/agentdrive:login` in Claude Code). Never guess credentials.
+`adrive resume` works without an account too: it reads this machine's agent
+transcripts. If another `adrive` command says the user is not logged in, ask
+them to run `adrive init` (or `/agentdrive:login` in Claude Code). Never guess
+credentials.
 
 ## Privacy
 

@@ -1,17 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createConnector, extractSignInUrl, waitFor } from '../src/connect.js';
+import { createConnector, extractSignIn, waitFor } from '../src/connect.js';
 
-describe('extractSignInUrl', () => {
-  it('finds the cli-auth URL in CLI output, colored or not', () => {
-    const plain = 'Opening browser to log in...\n  https://app.agentdrive.sh/cli-auth?id=abc123\n  If the browser does not open';
-    expect(extractSignInUrl(plain)).toBe('https://app.agentdrive.sh/cli-auth?id=abc123');
-    expect(extractSignInUrl('  \x1b[36mhttps://app.agentdrive.sh/cli-auth?id=x-9\x1b[39m\n')).toBe(
-      'https://app.agentdrive.sh/cli-auth?id=x-9',
-    );
+const SIGN_IN = 'Opening browser to log in...\n  https://agentdrive.sh/cli-auth?id=abc\n\n  Code: WXYZ-2345\n';
+
+describe('extractSignIn', () => {
+  it('finds the cli-auth URL and the code in CLI output, colored or not', () => {
+    expect(extractSignIn(SIGN_IN)).toEqual({ url: 'https://agentdrive.sh/cli-auth?id=abc', code: 'WXYZ-2345' });
+    const colored = '  \x1b[36mhttps://app.agentdrive.sh/cli-auth?id=x-9\x1b[39m\n\n  Code: \x1b[1m\x1b[33mABCD-EFGH\x1b[39m\x1b[22m\n';
+    expect(extractSignIn(colored)).toEqual({ url: 'https://app.agentdrive.sh/cli-auth?id=x-9', code: 'ABCD-EFGH' });
   });
 
-  it('returns undefined when no sign-in URL has been printed', () => {
-    expect(extractSignInUrl('npm warn exec The following package was not found\nhttps://agentdrive.sh')).toBeUndefined();
+  it('returns undefined until both the URL and the code have been printed', () => {
+    expect(extractSignIn('npm warn exec The following package was not found\nhttps://agentdrive.sh')).toBeUndefined();
+    expect(extractSignIn('Opening browser to log in...\n  https://agentdrive.sh/cli-auth?id=abc\n')).toBeUndefined();
   });
 });
 
@@ -60,15 +61,16 @@ describe('createConnector', () => {
     };
   }
 
-  it('returns the sign-in URL once the CLI prints it', async () => {
+  it('returns the sign-in URL and code once the CLI prints them', async () => {
     const t = setup();
     const result = t.connect();
     await vi.advanceTimersByTimeAsync(500);
-    t.setLog('Opening browser to log in...\n  https://app.agentdrive.sh/cli-auth?id=abc\n');
+    t.setLog(SIGN_IN);
     await vi.advanceTimersByTimeAsync(500);
     const text = await result;
     expect(text).toContain('A browser window was opened');
-    expect(text).toContain('https://app.agentdrive.sh/cli-auth?id=abc');
+    expect(text).toContain('URL: https://agentdrive.sh/cli-auth?id=abc');
+    expect(text).toContain('Code: WXYZ-2345');
   });
 
   it('points at the log when no URL shows up in time', async () => {
@@ -80,12 +82,13 @@ describe('createConnector', () => {
 
   it('does not spawn a second init while one is in flight, and respawns after it exits', async () => {
     const t = setup();
-    t.setLog('https://app.agentdrive.sh/cli-auth?id=abc');
+    t.setLog(SIGN_IN);
     await t.connect();
     const second = await t.connect();
     expect(t.spawnInit).toHaveBeenCalledTimes(1);
     expect(second).toContain('already in progress');
     expect(second).toContain('cli-auth?id=abc');
+    expect(second).toContain('WXYZ-2345');
 
     t.finishInit();
     await vi.advanceTimersByTimeAsync(0);
@@ -95,7 +98,7 @@ describe('createConnector', () => {
 
   it('calls onConnected once when the API key lands in the config', async () => {
     const t = setup();
-    t.setLog('https://app.agentdrive.sh/cli-auth?id=abc');
+    t.setLog(SIGN_IN);
     await t.connect();
     await t.connect();
     await vi.advanceTimersByTimeAsync(6_000);

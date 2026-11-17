@@ -18,18 +18,23 @@ export async function driveOrg(client: ApiClient, _args: Record<string, never>) 
     `Organization: ${org.name} (${org.id})`,
     `Plan: ${org.plan}`,
     '',
-    `Agents (${org.agents.length}/${org.quota.max_agents}):`,
+    `Agents (${org.agents.length}/${limit(org.quota.max_agents)}):`,
     agentList || '  (none)',
     '',
-    `Members (${org.members.length}/${org.quota.max_human_seats}):`,
+    `Members (${org.members.length}/${limit(org.quota.max_human_seats)}):`,
     memberList || '  (none)',
     '',
     `Usage:`,
-    `  Storage: ${formatBytes(org.usage.storage_bytes)} / ${formatBytes(org.quota.storage_bytes)}`,
-    `  Workspaces: ${org.usage.workspace_count} / ${org.quota.max_workspaces}`,
+    `  Storage: ${formatBytes(org.usage.storage_bytes)} / ${limit(org.quota.storage_bytes, formatBytes)}`,
+    `  Workspaces: ${org.usage.workspace_count} / ${limit(org.quota.max_workspaces)}`,
   ].join('\n');
 
   return { content: [{ type: 'text' as const, text }] };
+}
+
+// A self-hosted instance sends null for every quota: it has no limits.
+function limit(n: number | null, format: (n: number) => string = String): string {
+  return n === null ? 'unlimited' : format(n);
 }
 
 function formatBytes(bytes: number): string {

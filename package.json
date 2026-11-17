@@ -1,7 +1,7 @@
 {
   "name": "@adrive/mcp-server",
   "mcpName": "sh.agentdrive/agentdrive",
-  "version": "1.2.4",
+  "version": "1.3.0",
   "description": "MCP server for AgentDrive: capture coding-agent sessions and resume them in any other agent, in any direction.",
   "license": "Apache-2.0",
   "type": "module",
@@ -13,7 +13,10 @@
     ".": "./dist/index.js",
     "./registry": "./dist/registry.js",
     "./session": "./dist/session.js",
-    "./project": "./dist/project.js"
+    "./project": "./dist/project.js",
+    "./redactor": "./dist/redactor.js",
+    "./local": "./dist/local.js",
+    "./transcripts/*": "./dist/transcripts/*.js"
   },
   "files": [
     "dist",
@@ -35,8 +38,7 @@
     "ai-agent",
     "claude-code",
     "codex",
-    "cursor",
-    "langgraph"
+    "cursor"
   ],
   "publishConfig": {
     "access": "public"
@@ -48,12 +50,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.0",
-    "zod": "^3.24.0"
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "typescript": "^5.7.0",
-    "vitest": "^2.1.0"
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
+    "vitest": "^2.1.9"
   }
 }

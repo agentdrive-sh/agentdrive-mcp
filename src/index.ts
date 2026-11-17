@@ -9,6 +9,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { projectKeyFor, scopeProjectKey } from './project.js';
 import { CONNECT_DESCRIPTION, CONNECT_INSTRUCTIONS, createConnector, spawnInit, waitFor } from './connect.js';
+import { driveResumeLocal, driveSessionsLocal, type LocalToolContext } from './local.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -91,12 +92,21 @@ if (client) {
     { title: connectAnnotations.title, description: CONNECT_DESCRIPTION, annotations: connectAnnotations },
     async () => ({ content: [{ type: 'text' as const, text: await connect() }] }),
   );
+  const localCtx: LocalToolContext = { cwd: process.cwd(), exclude: process.env.AGENTDRIVE_AGENT_PLATFORM, configDir: CONFIG_DIR };
+  const localHandlers: Record<string, typeof driveSessionsLocal | typeof driveResumeLocal> = { drive_sessions: driveSessionsLocal, drive_resume: driveResumeLocal };
+  const localTools = TOOLS.filter((tool) => tool.name in localHandlers).map((tool) =>
+    server.registerTool(
+      tool.name,
+      { title: tool.annotations.title, description: tool.description, inputSchema: tool.schema, annotations: tool.annotations },
+      (args) => localHandlers[tool.name]!(localCtx, args),
+    ),
+  );
   let switched = false;
   function switchOver(connected: ApiClient): void {
     if (switched) return;
     switched = true;
+    for (const tool of [connectTool, ...localTools]) tool.remove();
     registerTools(server, connected);
-    connectTool.remove();
   }
   // The user may connect from a terminal (`adrive init`) instead of calling drive_connect.
   void waitFor(buildClient, { intervalMs: 5_000, timeoutMs: Number.POSITIVE_INFINITY }).then((c) => c && switchOver(c));

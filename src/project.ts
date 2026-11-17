@@ -15,6 +15,10 @@ function git(cwd: string, args: string[]): string | null {
   }
 }
 
+export function gitToplevel(cwd: string): string | null {
+  return git(cwd, ['rev-parse', '--show-toplevel']);
+}
+
 function sha8(value: string): string {
   return createHash('sha256').update(value).digest('hex').slice(0, 8);
 }
@@ -61,7 +65,7 @@ export function projectKeyFor(cwd: string): string {
   const normalized = remote ? normalizeRemote(remote) : null;
   if (normalized) return normalized.slice(0, 200);
 
-  const toplevel = git(cwd, ['rev-parse', '--show-toplevel']);
+  const toplevel = gitToplevel(cwd);
   if (toplevel) return `${slug(basename(toplevel)).slice(0, 150)}-${sha8(toplevel)}`;
 
   // Claude Code deletes a worktree once its work lands; its sessions still belong to the parent repo.

@@ -95,6 +95,14 @@ describe('usage warnings on write tools', () => {
 });
 
 describe('drive_context', () => {
+  it.each([1_794_845_100, 1_794_845_100_000])('formats fresh context using seconds or milliseconds (%s)', async (created_at) => {
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(1_794_845_130_000);
+    try {
+      const client = clientReturning({ body: { success: true, data: { artifacts: [{ path: 'launch.md', agent_id: 'ag_1', agent_platform: 'codex', created_at, snippet: 'Fresh task' }], retrieved_at: 1_794_845_130_000 } } });
+      expect(text(await tool('drive_context').handler(client, { task: 'x' }))).toContain('30s ago');
+    } finally { clock.mockRestore(); }
+  });
+
   it('always carries the one-line warning, even when a write already showed it', async () => {
     const ctx = { success: true, data: { artifacts: [], retrieved_at: 0 }, usage_warning: warn('warn80', 85) };
     const client = clientReturning({ body: { ...written, usage_warning: warn('warn80', 85) } }, { body: ctx }, { body: ctx });

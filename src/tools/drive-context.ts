@@ -34,7 +34,10 @@ export async function driveContext(client: ApiClient, args: {
 
 function formatArtifact(a: ContextArtifact, now: number): string {
   const snippet = truncate(a.snippet ?? '', 500);
-  const rel = relativeTime(now - a.created_at);
+  // Current servers emit milliseconds; older indexed records/servers used
+  // Unix seconds. Keep the formatter compatible while those records migrate.
+  const createdAt = a.created_at < 1e12 ? a.created_at * 1000 : a.created_at;
+  const rel = relativeTime(now - createdAt);
   return `${a.path} (by ${a.agent_id}@${a.agent_platform}, ${rel})\n${snippet}`;
 }
 

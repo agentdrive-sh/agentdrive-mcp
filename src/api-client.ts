@@ -41,7 +41,7 @@ export interface SearchHit {
   path: string;
   ws_id: string;
   content_hash: string;
-  score: number;
+  score: number | null;
   snippet?: string;
   agent_id: string;
   agent_platform: string;
@@ -404,7 +404,7 @@ export class ApiClient {
     agents_cursor: string | null;
     members_cursor: string | null;
     usage: { storage_bytes: number; agent_count: number; workspace_count: number; member_count: number };
-    quota: { storage_bytes: number; max_agents: number; max_workspaces: number; max_human_seats: number };
+    quota: { storage_bytes: number | null; max_agents: number | null; max_workspaces: number | null; max_human_seats: number | null };
   }> {
     const params = new URLSearchParams();
     if (agentsCursor) params.set('agents_cursor', agentsCursor);
@@ -418,7 +418,7 @@ export class ApiClient {
         agents: Array<{ agent_id: string; agent_name?: string; agent_email?: string }>;
         members: Array<{ email: string; role: string }>;
         usage: { storage_bytes: number; agent_count: number; workspace_count: number; member_count: number };
-        quota: { storage_bytes: number; max_agents: number; max_workspaces: number; max_human_seats: number };
+        quota: { storage_bytes: number | null; max_agents: number | null; max_workspaces: number | null; max_human_seats: number | null };
       };
       agents_cursor?: string | null;
       members_cursor?: string | null;

@@ -8,7 +8,7 @@ export const driveLogRunSchema = {
   artifacts_referenced: z.array(z.string()).optional().describe('Paths of artifacts the run read'),
   artifacts_produced: z.array(z.string()).optional().describe('Paths of artifacts the run wrote'),
   duration_ms: z.number().int().nonnegative().optional().describe('Wall-clock duration in milliseconds'),
-  metadata: z.record(z.unknown()).optional().describe('Free-form key/value metadata'),
+  metadata: z.record(z.string(), z.unknown()).optional().describe('Free-form key/value metadata'),
 };
 
 export async function driveLogRun(client: ApiClient, args: {

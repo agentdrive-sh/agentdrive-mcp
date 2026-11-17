@@ -26,7 +26,7 @@ export async function driveRecall(client: ApiClient, args: {
 }
 
 function formatHit(h: SearchHit): string {
-  const score = h.score.toFixed(2);
+  const score = h.score === null ? 'keyword' : h.score.toFixed(2);
   const snippet = truncate(h.snippet ?? '', 200);
   const created = new Date(h.created_at).toISOString();
   return `${h.path}\nws=${h.ws_id} · score=${score} · by=${h.agent_id}@${h.agent_platform} · ${created}\n${snippet}`;
