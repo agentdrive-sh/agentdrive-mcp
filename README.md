@@ -15,6 +15,17 @@ stable + 4 experimental sandbox), over stdio or hosted. Free plan, no credit car
 - **npm:** [`@adrive/mcp-server`](https://www.npmjs.com/package/@adrive/mcp-server)
 - **Hosted endpoint:** `https://mcp.agentdrive.sh/mcp`
 
+## Agent skills
+
+Install the workflow you need from this official repository.
+
+```sh
+pnpm dlx skills add agentdrive-sh/agentdrive-mcp --skill agentdrive-session-handoff
+pnpm dlx skills add agentdrive-sh/agentdrive-mcp --skill agentdrive-artifact-search
+```
+
+Use the first skill to recover a coding session and verify its handoff against the checkout. Use the second to find a decision in workspace files and trace its source.
+
 ## Claude Code plugin
 
 This repo is also the Claude Code plugin marketplace. The plugin captures every
