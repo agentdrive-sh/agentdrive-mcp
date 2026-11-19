@@ -1,9 +1,9 @@
 ---
-description: List recent AgentDrive sessions across agent harnesses
+description: List recent AgentDrive sessions across your agents
 argument-hint: "[platform or project]"
 ---
 
-List recent agent sessions captured by AgentDrive.
+List recent agent sessions synced by AgentDrive.
 
 Call the `drive_sessions` MCP tool. If a filter was given ($ARGUMENTS), pass a harness name (claude-code, codex, opencode, gemini-cli, cursor, antigravity) as `platform` and anything else as `project`.
 

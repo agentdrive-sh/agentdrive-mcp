@@ -1,5 +1,5 @@
 ---
-description: Resume an AgentDrive session from any agent harness
+description: Resume an AgentDrive session from any of your agents
 argument-hint: "[session-id]"
 ---
 

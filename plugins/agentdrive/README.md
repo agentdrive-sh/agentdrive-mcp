@@ -1,6 +1,6 @@
 # AgentDrive
 
-AgentDrive saves your Claude Code sessions so you can pick one up in another coding agent (Codex, Cursor, OpenCode, Gemini CLI or Antigravity), or bring a session from one of those back into Claude Code. Hit a usage limit in one agent and keep going in another, with the transcript, decisions and files carried over.
+AgentDrive saves your Claude Code sessions so you can pick one up in another coding agent (Codex, Cursor, OpenCode or Antigravity), or bring a session from one of those back into Claude Code. Hit a usage limit in one agent and keep going in another, with the transcript, decisions and files carried over.
 
 ## Install
 
@@ -27,14 +27,14 @@ Both packages are open source under Apache-2.0: [agentdrive-sh/agentdrive-mcp](h
 
 Nothing leaves your machine until you sign in. Before that, the session-start hook only adds a short note offering to connect.
 
-After you sign in, a notice shows what is on. On a new install capture is on, and then:
+After you sign in, a notice shows what is on. On a new install sync is on, and then:
 
 - **On each hook event**, a background `adrive sync` uploads the current session's transcript, and files your agents wrote that git does not track, to your AgentDrive workspace at `app.agentdrive.sh` (hosted on Cloudflare).
-- **Recognized secret patterns are redacted on your device** from captured transcripts and files before upload. Redaction is best-effort. A `.adriveignore` file excludes file paths from artifact capture; it does not remove text already pasted into a conversation.
-- **Private Workspace encrypts CLI-captured content locally** before `adrive sync` uploads it. `adrive push` also honors that preference unless `--plaintext` is supplied; `--encrypt` explicitly enables encryption for a push. Ordinary direct REST/MCP writes and control metadata are outside this encryption setting. The local software key store is not an OS keychain: preserve both `keychain.bin` and `keychain.bin.protector` on the original machine/user for decryption.
+- **Recognized secret patterns are redacted on your device** from synced transcripts and files before upload. Redaction is best-effort. A `.adriveignore` file excludes file paths from artifact sync; it does not remove text already pasted into a conversation.
+- **Private Workspace encrypts the content the CLI syncs on your machine** before `adrive sync` uploads it. `adrive push` also honors that preference unless `--plaintext` is supplied; `--encrypt` explicitly enables encryption for a push. Ordinary direct REST/MCP writes and control metadata are outside this encryption setting. The local software key store is not an OS keychain: preserve both `keychain.bin` and `keychain.bin.protector` on the original machine/user for decryption.
 - **At session start**, it fetches a short summary of this project's recent sessions and adds it to Claude's context, and connects installed agent tools it has not connected before by adding AgentDrive's hooks, MCP server, commands and skill to their config files.
 
-Turn any of this off at any time with `adrive privacy` (capture of transcripts and files, session-start context, connecting new agent tools, and Private Workspace).
+Turn any of this off at any time with `adrive privacy` (sync of transcripts and files, session-start context, connecting new agent tools, and Private Workspace).
 
 - Privacy policy: https://agentdrive.sh/legal/privacy
 - Terms: https://agentdrive.sh/legal/terms
