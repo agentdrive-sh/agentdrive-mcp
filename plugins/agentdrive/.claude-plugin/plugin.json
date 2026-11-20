@@ -1,7 +1,7 @@
 {
   "name": "agentdrive",
   "displayName": "AgentDrive",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Syncs your Claude Code sessions in the background so you can resume them from Codex, OpenCode, Cursor, or Antigravity, and the other way around.",
   "author": {
     "name": "AgentDrive",

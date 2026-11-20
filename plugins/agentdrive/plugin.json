@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "agentdrive",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "The AgentDrive skill and MCP server: resume coding-agent sessions across Claude Code, Codex, OpenCode, Cursor and Antigravity, and search what other agents wrote.",
   "author": { "name": "AgentDrive", "url": "https://github.com/agentdrive-sh" },
   "homepage": "https://agentdrive.sh",
