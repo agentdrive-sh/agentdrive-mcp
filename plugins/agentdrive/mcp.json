@@ -4,7 +4,7 @@
     "agentdrive": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "@adrive/mcp-server@1.4.0"]
+      "args": ["-y", "@adrive/mcp-server@1.4.1"]
     }
   }
 }

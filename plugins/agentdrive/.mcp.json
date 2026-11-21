@@ -2,7 +2,7 @@
   "mcpServers": {
     "agentdrive": {
       "command": "npx",
-      "args": ["-y", "@adrive/mcp-server@1.4.0"],
+      "args": ["-y", "@adrive/mcp-server@1.4.1"],
       "env": {
         "AGENTDRIVE_AGENT_PLATFORM": "claude-code"
       }
